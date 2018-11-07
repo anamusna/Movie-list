@@ -5,12 +5,16 @@ import Tabs from './components/Tabs';
 import List from './components/List';
 import { nowShowingUrl, topRatedUrl } from './api/ApiConfig';
 import axios from 'axios';
+import Error from './components/Error';
 
 class App extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			selectedType : 'now_showing'
+			selectedType : 'now_showing',
+			nowShowing   : [],
+			topRated     : [],
+			Error        : ''
 		};
 	}
 
@@ -24,29 +28,47 @@ class App extends Component {
 					});
 				});
 				break;
-			case 'now_showing':
-				axios.get(nowShowingUrl).then((response) => {
-					this.setState({
-						nowShowing   : response.data.results,
-						selectedType
+			default:
+				axios
+					.get(nowShowingUrl)
+					.then((response) => {
+						this.setState({
+							nowShowing   : response.data.results,
+							selectedType
+						});
+					})
+					.catch((error) => {
+						console.log('xxxxxxx', error);
+						this.setState((errorMsg) => {
+							errorMsg.error = 'Wrong output';
+							return errorMsg;
+						});
 					});
-				});
-				break;
+
+				console.log('zzzzz', Error);
 		}
 	};
 
+	componentDidMount() {
+		this.onTabSelected(this.state.selectedType);
+	}
+
 	render() {
 		const { selectedType, nowShowing, topRated } = this.state;
+
 		return (
 			<div className="App">
 				<header className="App-header">
 					<img src={logo} className="App-logo" alt="logo" />
-					<p>Ansu's Movie List</p>
+					<p>Movie List</p>
 				</header>
-				<p className="App-intro">Click me for magic</p>
+
 				<Tabs selectedType={selectedType} onTabSelected={this.onTabSelected} />
-				{selectedType === 'top_rated' && topRated && <List data={topRated} />}
-				{selectedType === 'now_showing' && nowShowing && <List data={nowShowing} />}
+				<Error error={this.state.errorMsg} />
+				{selectedType === 'top_rated' &&
+				topRated.length > 0 && <List data={topRated} error={this.state.errorMsg} />}
+				{selectedType === 'now_showing' &&
+				nowShowing.length > 0 && <List data={nowShowing} error={this.state.errorMsg} />}
 			</div>
 		);
 	}
